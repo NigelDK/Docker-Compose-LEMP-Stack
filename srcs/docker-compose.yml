@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mariadb:
+    build: ./requirements/mariadb/
+    environment:
+      MYSQL_DATABASE: db_name
+      MYSQL_USER: $DB_USER
+      MYSQL_PASSWORD: $DB_PASSWORD
+      MYSQL_ROOT_PASS: $DB_ROOT_PASS
+    volumes:
+      - db_volume:/var/lib/mysql
+    restart: always
+    networks:
+      - inception
+
+  wordpress:
+    build: ./requirements/wordpress/
+    volumes:
+      - wp_volume:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_NAME: db_name
+      WORDPRESS_DB_USER: $DB_USER
+      WORDPRESS_DB_PASSWORD: $DB_PASSWORD
+      WORDPRESS_ADMIN: $WP_ADMIN
+      WORDPRESS_ADMIN_PASS: $WP_ADMIN_PASS
+      WORDPRESS_ADMIN_EMAIL: $WP_ADMIN_EMAIL
+      WORDPRESS_USER: $WP_USER
+      WORDPRESS_USER_ROLE: $WP_USER_ROLE
+      WORDPRESS_USER_PASS: $WP_USER_PASS
+      WORDPRESS_USER_EMAIL: $WP_USER_EMAIL
+    depends_on:
+      - mariadb
+    restart: always
+    networks:
+      - inception
+
+  nginx:
+    build: ./requirements/nginx/
+    volumes:
+      - wp_volume:/var/www/html
+    ports:
+      - "443:443"
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    restart: always
+
+volumes: 
+  db_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nde-koni/data/mariadb
+  wp_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nde-koni/data/wordpress
+
+networks:
+  inception:
+    name: inception
